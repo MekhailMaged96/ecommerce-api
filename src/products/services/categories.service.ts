@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,15 +9,25 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCategoryDto } from '../dto/create-category.dto';
 import { UpdateCategoryDto } from '../dto/update-category.dto';
 import { CategoryEntity } from '../entities/category.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   async findAll(): Promise<CategoryEntity[]> {
+    const cached =
+      await this.cacheManager.get<CategoryEntity[]>(`categories:all`);
+    if (cached) return cached;
+
     const categories = await this.prisma.category.findMany();
+    await this.cacheManager.set(`categories:all`, categories, 60000);
     return plainToInstance(CategoryEntity, categories);
-  }  
+  }
 
   async findById(id: string): Promise<CategoryEntity> {
     const category = await this.prisma.category.findUnique({ where: { id } });
