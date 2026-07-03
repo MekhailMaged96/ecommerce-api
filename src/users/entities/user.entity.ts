@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
+import { RoleEntity } from 'src/roles/entites/role.entity';
+import { UserRoleEntity } from './user-role.entity';
 
 export class UserEntity {
   @ApiProperty()
@@ -33,6 +35,11 @@ export class UserEntity {
   @ApiPropertyOptional()
   @Expose()
   updatedAt: Date | null;
+
+  @ApiPropertyOptional({ type: () => [UserRoleEntity] })
+  @Expose()
+  @Type(() => UserRoleEntity)
+  roles: UserRoleEntity[];
 
   @Exclude()
   password: string;

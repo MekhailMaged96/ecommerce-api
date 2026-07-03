@@ -23,7 +23,9 @@ export class UsersService {
   }
 
   async findAll(): Promise<UserEntity[]> {
-    const users = await this.prisma.user.findMany();
+    const users = await this.prisma.user.findMany({
+      include: { roles: { include: { role: true } } },
+    });
     return plainToInstance(UserEntity, users);
   }
 
