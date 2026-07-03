@@ -34,20 +34,23 @@ export class AuthService {
   async login(dto: LoginDto): Promise<{ access_token: string }> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
+      include: { roles: { include: { role: true } } },
     });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const valid = await bcrypt.compare(dto.password, user.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
-    return this.signToken(user.id, user.email);
+    const roles = user.roles.map((ur) => ur.role.name);
+    return this.signToken(user.id, user.email, roles);
   }
 
   private async signToken(
     userId: string,
     email: string,
+    roles: string[] = [],
   ): Promise<{ access_token: string }> {
-    const token = await this.jwt.signAsync({ sub: userId, email });
+    const token = await this.jwt.signAsync({ sub: userId, email, roles });
     return { access_token: token };
   }
 }
